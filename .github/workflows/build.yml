@@ -34,7 +34,7 @@ jobs:
         git config --global user.name "GitHub Action"
         git config --global user.email "action@github.com"
         mkdir -p ~/fox/.repo && cd ~/fox/.repo
-        git clone https://github.com/minimal-manifest-twrp/firmware_manifest_twrp.git -b twrp-11 manifests
+        git -c core.askPass= true clone https://github.com/minimal-manifest-twrp/platform_manifest_twrp_omni.git -b twrp-11.0 manifests || git -c core.askPass= true clone https://github.com/TWRP/platform_manifest_twrp_omni.git -b twrp-11.0 manifests
         cp manifests/default.xml manifest.xml
         cd ~/fox
         repo sync -c --no-clone-bundle --no-tags --force-sync -j$(nproc)
