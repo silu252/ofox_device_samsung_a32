@@ -15,6 +15,11 @@
 #
 
 PRODUCT_MAKEFILES := \
+    $(LOCAL_DIR)/pb_a32.mk \
 	$(LOCAL_DIR)/twrp_a32.mk
+    $(LOCAL_DIR)/omni_a32.mk
 
 COMMON_LUNCH_CHOICES := twrp_a32-eng
+    pb_a32-eng \
+    twrp_a32-eng \
+    omni_a32-eng
