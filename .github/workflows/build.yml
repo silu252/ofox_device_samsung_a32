@@ -10,14 +10,14 @@ jobs:
       contents: write
     steps:
     - name: Checkout Device Tree
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up Build Environment
       run: |
         sudo apt-get update
         sudo apt-get install -y gperf gcc-multilib gcc-10-multilib g++-multilib g++-10-multilib \
         libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z1-dev \
-        libgl1-mesa-dev libxml2-utils xsltproc unzip bc ccache zip curldroid python3 repo
+        libgl1-mesa-dev libxml2-utils xsltproc unzip bc ccache zip curl python3 repo
 
     - name: Initialize Repo & Sync
       run: |
@@ -40,7 +40,7 @@ jobs:
         mka recoveryimage -j$(nproc)
 
     - name: Upload Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: OrangeFox_A32_Recovery
         path: |
