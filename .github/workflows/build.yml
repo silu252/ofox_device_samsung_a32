@@ -17,7 +17,7 @@ jobs:
       with:
         swap-size-gb: 12
 
-    - name: Set up Build Environment & Modern Repo
+    - name: Set up Build Environment
       run: |
         sudo apt-get update
         sudo apt-get install -y git-core gnupg flex bison build-essential zip curl zlib1g-dev \
@@ -30,12 +30,14 @@ jobs:
         echo "$HOME/.bin" >> $GITHUB_PATH
 
     - name: Initialize Repo & Sync
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git config --global user.name "GitHub Action"
         git config --global user.email "action@github.com"
-        git config --global credential.helper ""
+        git config --global extraheader "AUTHORIZATION: basic $(echo -n x-access-token:${GITHUB_TOKEN} | base64)"
         mkdir -p ~/fox && cd ~/fox
-        repo init --no-repo-verify -u https://github.com/minimal-manifest-twrp/firmware_manifest_twrp.git -b twrp-11 --depth=1 --no-clone-bundle
+        repo init -u https://github.com/minimal-manifest-twrp/firmware_manifest_twrp.git -b twrp-11 --depth=1
         repo sync -c --no-clone-bundle --no-tags --force-sync -j$(nproc)
 
     - name: Link Device Tree
