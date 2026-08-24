@@ -17,7 +17,7 @@ jobs:
       with:
         swap-size-gb: 12
 
-    - name: Set up Build Environment & Modern Repo
+    - name: Set up Build Environment
       run: |
         sudo apt-get update
         sudo apt-get install -y git-core gnupg flex bison build-essential zip curl zlib1g-dev \
@@ -33,8 +33,9 @@ jobs:
       run: |
         git config --global user.name "GitHub Action"
         git config --global user.email "action@github.com"
+        git config --global core.compression 0
         mkdir -p ~/fox && cd ~/fox
-        repo init -u https://github.com/OrangeFox/manifest.git -b fox_11.0 --depth=1
+        repo init --no-repo-verify -u https://github.com/PitchBlackRecoveryProject/manifest_pb.git -b android-11.0 --depth=1
         repo sync -c --no-clone-bundle --no-tags --force-sync -j$(nproc)
 
     - name: Link Device Tree
@@ -48,13 +49,13 @@ jobs:
         export ALLOW_MISSING_DEPENDENCIES=true
         export LC_ALL="C"
         source build/envsetup.sh
-        lunch twrp_a32-eng || lunch omni_a32-eng || lunch fox_a32-eng
+        lunch twrp_a32-eng || lunch omni_a32-eng || lunch fox_a32-eng || lunch pb_a32-eng
         mka recoveryimage -j$(nproc)
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: OrangeFox_A32_Recovery
+        name: Recovery_A32
         path: |
           /home/runner/fox/out/target/product/a32/recovery.img
           /home/runner/fox/out/target/product/a32/*.zip
