@@ -12,14 +12,50 @@ jobs:
     - name: Checkout Device Tree
       uses: actions/checkout@v4.1.7
 
-    - name: Build Recovery
-      uses: SHRP-Devices/Recovery-Builder-Action@main
+    - name: Set up Swap Space
+      uses: pierotofy/set-swap-space@master
       with:
-        MANIFEST_URL: 'https://github.com/minimal-manifest-twrp/firmware_manifest_twrp'
-        MANIFEST_BRANCH: 'twrp-11'
-        DEVICE_TREE_URL: 'https://github.com/${{ github.repository }}'
-        DEVICE_TREE_BRANCH: 'android-12.1'
-        DEVICE_PATH: 'device/samsung/a32'
-        DEVICE_NAME: 'a32'
-        MAKEFILE_NAME: 'twrp_a32'
-        BUILD_TARGET: 'recovery'
+        swap-size-gb: 12
+
+    - name: Set up Build Environment
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y git-core gnupg flex bison build-essential zip curl zlib1g-dev \
+        gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses-dev x11proto-core-dev \
+        libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip fontconfig \
+        python3 python3-pip python-is-python3
+        mkdir -p ~/.bin
+        curl https://storage.googleapis.com/git-repo-downloads/repo > ~/.bin/repo
+        chmod a+rx ~/.bin/repo
+        echo "$HOME/.bin" >> $GITHUB_PATH
+
+    - name: Initialize Repo & Sync
+      run: |
+        git config --global user.name "GitHub Action"
+        git config --global user.email "action@github.com"
+        mkdir -p ~/fox && cd ~/fox
+        repo init --no-repo-verify -u https://github.com/minimal-manifest-twrp/firmware_manifest_twrp -b twrp-11 --depth=1
+        repo sync -c --no-clone-bundle --no-tags --force-sync -j$(nproc)
+
+    - name: Link Device Tree
+      run: |
+        mkdir -p ~/fox/device/samsung/a32
+        cp -r $GITHUB_WORKSPACE/* ~/fox/device/samsung/a32/
+
+    - name: Build Recovery
+      run: |
+        cd ~/fox
+        export ALLOW_MISSING_DEPENDENCIES=true
+        export LC_ALL="C"
+        source build/envsetup.sh
+        lunch twrp_a32-eng || lunch omni_a32-eng || lunch fox_a32-eng
+        mka recoveryimage -j$(nproc)
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: OrangeFox_A32_Recovery
+        path: |
+          /home/runner/fox/out/target/product/a32/recovery.img
+          /home/runner/fox/out/target/product/a32/*.zip
+          /home/runner/fox/out/target/product/a32/*.tar
