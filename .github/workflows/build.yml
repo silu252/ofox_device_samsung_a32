@@ -23,11 +23,14 @@ jobs:
         sudo apt-get install -y git-core gnupg flex bison build-essential zip curl zlib1g-dev \
         gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses-dev x11proto-core-dev \
         libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip fontconfig \
-        python3 python3-pip python-is-python3 python2-minimal || true
+        python3 python3-pip python-is-python3
         
-        # Python 2 Sembolik Bağ Kurulumu (Build araçları için)
-        sudo ln -sf /usr/bin/python3 /usr/bin/python2
-        
+        # Python 2 sentaks hatasını çözmek için gerçek python2 paketini kur
+        sudo apt-get install -y python2-minimal || true
+        if [ -f /usr/bin/python2.7 ]; then
+          sudo ln -sf /usr/bin/python2.7 /usr/bin/python2
+        fi
+
         mkdir -p ~/.bin
         curl https://storage.googleapis.com/git-repo-downloads/repo > ~/.bin/repo
         chmod a+rx ~/.bin/repo
@@ -42,14 +45,24 @@ jobs:
         repo init --no-repo-verify -u https://github.com/PitchBlackRecoveryProject/manifest_pb.git -b android-11.0 --depth=1
         repo sync -c --no-clone-bundle --no-tags --force-sync -j$(nproc)
 
-    - name: Link Device Tree & Fix Include Paths
+    - name: Link Device Tree & Fix Configs
       run: |
         mkdir -p ~/fox/device/samsung/a32
         cp -r $GITHUB_WORKSPACE/* ~/fox/device/samsung/a32/
-        
-        # PBRP bağımlılık yolunu device.mk ve AndroidProducts.mk içinde otomatik yamala
-        sed -i 's|vendor/twrp/config/common.mk|vendor/pb/config/common.mk|g' ~/fox/device/samsung/a32/device.mk || true
-        sed -i 's|vendor/omni/config/common.mk|vendor/pb/config/common.mk|g' ~/fox/device/samsung/a32/device.mk || true
+
+        # roomservice.py içindeki Python 2 sentaks hatasını yamala
+        sed -i 's/except IOError, ES.ParseError:/except (IOError, ES.ParseError):/g' ~/fox/vendor/pb/build/tools/roomservice.py || true
+
+        # Device tree dosyalarındaki twrp/omni yollarını pb ile değiştir ve eksik vendor bağımlılığını sağla
+        find ~/fox/device/samsung/a32/ -type f -exec sed -i 's|vendor/twrp|vendor/pb|g' {} +
+        find ~/fox/device/samsung/a32/ -type f -exec sed -i 's|vendor/omni|vendor/pb|g' {} +
+
+        # pb_a32.mk ve pb.dependencies için eşleme oluştur
+        cd ~/fox/device/samsung/a32
+        if [ -f twrp_a32.mk ]; then cp twrp_a32.mk pb_a32.mk; fi
+        if [ -f omni_a32.mk ]; then cp omni_a32.mk pb_a32.mk; fi
+        sed -i 's|twrp_a32|pb_a32|g' pb_a32.mk || true
+        sed -i 's|omni_a32|pb_a32|g' pb_a32.mk || true
 
     - name: Build Recovery
       run: |
