@@ -33,8 +33,9 @@ jobs:
       run: |
         git config --global user.name "GitHub Action"
         git config --global user.email "action@github.com"
+        git config --global http.postBuffer 524288000
         mkdir -p ~/fox && cd ~/fox
-        repo init -u https://gitlab.com/OrangeFox/Manifest.git -b fox_11.0 --depth=1
+        repo init --no-repo-verify -u https://github.com/minimal-manifest-twrp/firmware_manifest_twrp -b twrp-11.0 --depth=1
         repo sync -c --no-clone-bundle --no-tags --force-sync -j$(nproc)
 
     - name: Link Device Tree
@@ -46,10 +47,9 @@ jobs:
       run: |
         cd ~/fox
         export ALLOW_MISSING_DEPENDENCIES=true
-        export FOX_BUILD_TYPE="Unofficial"
         export LC_ALL="C"
         source build/envsetup.sh
-        lunch omni_a32-eng || lunch twrp_a32-eng
+        lunch twrp_a32-eng || lunch omni_a32-eng || lunch fox_a32-eng
         mka recoveryimage -j$(nproc)
 
     - name: Upload Artifact
